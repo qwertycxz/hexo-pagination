@@ -1,4 +1,4 @@
-import { format } from 'util'
+import { format } from 'util';
 
 type Relative<T extends string = string> = `${T}/`;
 type Base<B extends string> = B extends '' ? '' : B extends Relative ? B : Relative<B>;
@@ -16,28 +16,11 @@ export = function pagination<B extends string, P, L extends string | string[], D
   if (!posts) throw new TypeError('posts is required!');
 
   let _base = base as Base<B>;
-  if (_base && !_base.endsWith('/')) _base = `${base}/` as Base<B>;
+  if (_base && !_base.endsWith('/')) {
+    _base = `${base}/` as Base<B>;
+  }
 
-  const { length } = posts;
-
-  const total = perPage ? Math.ceil(length / perPage) : 1;
-  const result: {
-    path: Path<B>;
-    layout: L;
-    data: D & {
-      base: Base<B>;
-      total: number;
-      current: number;
-      current_url: Path<B>;
-      posts: P[];
-      prev: number;
-      prev_link: Link<B>;
-      next: number;
-      next_link: Link<B>;
-    };
-  }[] = [];
   const urlCache = new Map<number, Path<B>>();
-
   function formatURL(i: number) {
     if (urlCache.has(i)) return urlCache.get(i)!;
 
@@ -50,6 +33,7 @@ export = function pagination<B extends string, P, L extends string | string[], D
     return url;
   }
 
+  const total = perPage ? Math.ceil(posts.length / perPage) : 1;
   function makeData(i: number) {
     const data = {
       base: _base,
@@ -76,19 +60,35 @@ export = function pagination<B extends string, P, L extends string | string[], D
     return data;
   }
 
-  if (perPage) {
-    for (let i = 1; i <= total; i++) {
-      result.push({
-        path: formatURL(i),
-        layout,
-        data: Object.assign(makeData(i), data)
-      });
-    }
-  } else {
-    result.push({
-      path: _base as Path<B>,
+  if (!perPage) return [
+    {
+      path: _base,
       layout,
-      data: Object.assign(makeData(1), data)
+      data: Object.assign(makeData(1), data),
+    },
+  ]
+
+  const result: {
+    path: Path<B>;
+    layout: L;
+    data: D & {
+      base: Base<B>;
+      total: number;
+      current: number;
+      current_url: Path<B>;
+      posts: P[];
+      prev: number;
+      prev_link: Link<B>;
+      next: number;
+      next_link: Link<B>;
+    };
+  }[] = [];
+
+  for (let i = 1; i <= total; i++) {
+    result.push({
+      path: formatURL(i),
+      layout,
+      data: Object.assign(makeData(i), data),
     });
   }
 
